@@ -23,7 +23,7 @@ Pattern pattern = Pattern.compile(regex);
 
 def isUpdateFlow(identity) {
   Object val = identity.getOrDefault('_flow', null);
-  return val;   // temporarily return raw value
+  return (val == 'Update') || (val == 'Lost');
 }
 
 def getResidenceStatus(identity) {
@@ -96,7 +96,7 @@ def getApplicantType() {
   if( ageCode == 'KER-MSD-151' ) { return "KER-MSD-151"; }
   
   if(itc == null || genderType == null || ageCode == null || isBioExPresent == null ) { 
-      return "DEBUG_" + isUpdateFlow(identity);
+      return isUpdateFlow(identity) ? "000" : "KER-MSD-147";
   }
 
   System.out.println(itc + " - " + genderType + " - " + ageCode + " - " + isBioExPresent);
