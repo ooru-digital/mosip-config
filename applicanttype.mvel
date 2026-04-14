@@ -23,7 +23,7 @@ Pattern pattern = Pattern.compile(regex);
 
 def isUpdateFlow(identity) {
   Object val = identity.getOrDefault('_flow', null);
-  return (val == 'Update') ? true : false;
+  return (val == 'Update') || (val == 'Lost');
 }
 
 def getResidenceStatus(identity) {
