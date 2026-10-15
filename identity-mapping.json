@@ -42,6 +42,9 @@
 		"emailId": {
 			"value": "email"
 		},
+		"placeOfBirth": {
+			"value": "placeOfBirth"
+		},
 		"uin": {
 			"value": "UIN"
 		},
