@@ -267,40 +267,41 @@
       </choice>
    </route>
    <route id="demo-dedupe-->bio-dedupe new route">
-      <from uri="eventbus://demo-dedupe-new-bus-out" />
-      <log message="demo-dedupe-->bio-dedupe new route ${bodyAs(String)}" />
-      <choice>
-         <when>
-            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
-            <to uri="workflow-cmd://complete-as-failed" />
-            <to uri="workflow-cmd://anonymous-profile" />
-         </when>
-         <when>
-            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
-            <to uri="workflow-cmd://complete-as-rejected" />
-            <to uri="workflow-cmd://anonymous-profile" />
-         </when>
-         <when>
-            <jsonpath suppressExceptions="true">$.[?(@['messageBusAddress']['address'] == 'abis-handler-bus-in')]</jsonpath>
-            <to uri="eventbus://abis-handler-bus-in" />
-         </when>
-         <when>
-            <jsonpath suppressExceptions="true">$.[?(@['messageBusAddress']['address'] == 'manual-adjudication-bus-in')]</jsonpath>
-            <to uri="eventbus://manual-adjudication-bus-in" />
-         </when>
-         <when>
-            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
-            <to uri="workflow-cmd://complete-as-rejected" />
-            <to uri="workflow-cmd://anonymous-profile" />
-         </when>
-		 <when>
-            <jsonpath suppressExceptions="true">$.[?(@['tags']['AGE_GROUP'] == 'INFANT')]</jsonpath>
-            <to uri="eventbus://verification-bus-in" />
-         </when>
-         <otherwise>
-            <to uri="eventbus://bio-dedupe-bus-in" />
-         </otherwise>
-      </choice>
+	   <from uri="eventbus://demo-dedupe-new-bus-out" />
+	   <log message="demo-dedupe-->bio-dedupe new route ${bodyAs(String)}" />
+	   <choice>
+	      <!-- SIGA found no matching record: stage already set status_code=PAUSED, so end the flow here -->
+	      <when>
+	         <jsonpath suppressExceptions="true">$.[?(@['tags']['SIGA_VERIFICATION'] == 'PAUSED')]</jsonpath>
+	         <log message="demo-dedupe SIGA no-match, packet left PAUSED for manual verification ${bodyAs(String)}" />
+	         <stop />
+	      </when>
+	      <when>
+	         <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
+	         <to uri="workflow-cmd://complete-as-failed" />
+	         <to uri="workflow-cmd://anonymous-profile" />
+	      </when>
+	      <when>
+	         <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
+	         <to uri="workflow-cmd://complete-as-rejected" />
+	         <to uri="workflow-cmd://anonymous-profile" />
+	      </when>
+	      <when>
+	         <jsonpath suppressExceptions="true">$.[?(@['messageBusAddress']['address'] == 'abis-handler-bus-in')]</jsonpath>
+	         <to uri="eventbus://abis-handler-bus-in" />
+	      </when>
+	      <when>
+	         <jsonpath suppressExceptions="true">$.[?(@['messageBusAddress']['address'] == 'manual-adjudication-bus-in')]</jsonpath>
+	         <to uri="eventbus://manual-adjudication-bus-in" />
+	      </when>
+	      <when>
+	         <jsonpath suppressExceptions="true">$.[?(@['tags']['AGE_GROUP'] == 'INFANT')]</jsonpath>
+	         <to uri="eventbus://verification-bus-in" />
+	      </when>
+	      <otherwise>
+	         <to uri="eventbus://bio-dedupe-bus-in" />
+	      </otherwise>
+	   </choice>
    </route>
    <route id="abis-handler-->abis-middleware new route">
       <from uri="eventbus://abis-handler-new-bus-out" />
