@@ -270,12 +270,19 @@
 	   <from uri="eventbus://demo-dedupe-new-bus-out" />
 	   <log message="demo-dedupe-->bio-dedupe new route ${bodyAs(String)}" />
 	   <choice>
-	      <!-- SIGA found no matching record: stage already set status_code=PAUSED, so end the flow here -->
+	      <!-- SIGA found no matching record: pause the parent and wait for a SIGA_CORRECTION packet from the portal -->
 	      <when>
-	         <jsonpath suppressExceptions="true">$.[?(@['tags']['SIGA_VERIFICATION'] == 'PAUSED')]</jsonpath>
-	         <log message="demo-dedupe SIGA no-match, packet left PAUSED for manual verification ${bodyAs(String)}" />
-	         <stop />
+	         <jsonpath suppressExceptions="true">$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false &amp;&amp; @['tags']['SIGA_VERIFICATION'] == 'PAUSED')]</jsonpath>
+	         <log message="demo-dedupe SIGA no-match, requesting SIGA_CORRECTION ${bodyAs(String)}" />
+            <setProperty propertyName="ADDITIONAL_INFO_PROCESS"><constant>SIGA_CORRECTION</constant></setProperty>
+            <!-- PAUSE_FOR is in seconds -->
+            <setProperty propertyName="PAUSE_FOR"><constant>1296000</constant></setProperty>
+            <to uri="workflow-cmd://pause-and-request-additional-info" />
 	      </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == true &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://mark-as-reprocess" />
+         </when>
 	      <when>
 	         <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
 	         <to uri="workflow-cmd://complete-as-failed" />

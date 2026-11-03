@@ -1,0 +1,68 @@
+<routes xmlns="http://camel.apache.org/schema/spring">
+   <!-- SIGA_CORRECTION sub-flow. The packet is created by the adjudication packet service, so it has no
+        center, machine or operator data and skips those validators. When it completes, the parent packet
+        resumes and demo dedupe calls SIGA again with the corrected values. -->
+   <route id="packet-receiver-->securezone-notification siga_correction route">
+      <from uri="eventbus://packet-receiver-siga_correction-bus-out" />
+      <log message="packet-receiver-->securezone-notification siga_correction ${bodyAs(String)}" />
+      <choice>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-failed" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == true &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://mark-as-reprocess" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-failed" />
+         </when>
+         <otherwise>
+            <to uri="eventbus://securezone-notification-bus-in" />
+         </otherwise>
+      </choice>
+   </route>
+   <route id="securezone-notification-->packet-uploader siga_correction route">
+      <from uri="eventbus://securezone-notification-siga_correction-bus-out" />
+      <log message="securezone-notification-->packet-uploader siga_correction route ${bodyAs(String)}" />
+      <choice>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-failed" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == true &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://mark-as-reprocess" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-rejected-without-parent-flow" />
+         </when>
+         <otherwise>
+            <to uri="eventbus://packet-uploader-bus-in" />
+         </otherwise>
+      </choice>
+   </route>
+   <route id="packet-uploader-->complete siga_correction route">
+      <from uri="eventbus://packet-uploader-siga_correction-bus-out" />
+      <log message="packet-uploader-->complete siga_correction route ${bodyAs(String)}" />
+      <choice>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-failed" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == true &amp;&amp; @['internalError'] == true)]</jsonpath>
+            <to uri="workflow-cmd://mark-as-reprocess" />
+         </when>
+         <when>
+            <jsonpath>$.[?(@['isValid'] == false &amp;&amp; @['internalError'] == false)]</jsonpath>
+            <to uri="workflow-cmd://complete-as-failed" />
+         </when>
+         <otherwise>
+            <to uri="workflow-cmd://complete-as-processed" />
+         </otherwise>
+      </choice>
+   </route>
+</routes>
